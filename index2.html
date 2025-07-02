@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Code Editor</title>
+    <style>
+         :root {
+            --primary-color: #4a6fa5;
+            --secondary-color: #f8f9fa;
+            --editor-bg: #1e1e1e;
+            --line-numbers: #858585;
+            --text-color: #d4d4d4;
+            --border-color: #444;
+            --button-hover: #3a5a8f;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+        
+        .editor-container {
+            display: flex;
+            flex-direction: column;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tabs {
+            display: flex;
+            background-color: var(--primary-color);
+        }
+        
+        .tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            color: white;
+            font-weight: 500;
+            transition: background-color 0.2s;
+            position: relative;
+        }
+        
+        .tab.active {
+            background-color: var(--editor-bg);
+            color: white;
+        }
+        
+        .tab:hover:not(.active) {
+            background-color: var(--button-hover);
+        }
+        
+        .tab-content {
+            display: none;
+            height: 300px;
+            position: relative;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .editor-wrapper {
+            position: relative;
+            height: 100%;
+        }
+        
+        .line-numbers {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 40px;
+            height: 100%;
+            background-color: var(--editor-bg);
+            color: var(--line-numbers);
+            text-align: right;
+            padding: 10px 5px;
+            font-family: monospace;
+            line-height: 1.5;
+            overflow-y: hidden;
+            border-right: 1px solid var(--border-color);
+        }
+        
+        .editor {
+            position: absolute;
+            left: 40px;
+            top: 0;
+            width: calc(100% - 40px);
+            height: 100%;
+            padding: 10px;
+            background-color: var(--editor-bg);
+            color: var(--text-color);
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            border: none;
+            resize: none;
+            outline: none;
+            white-space: pre;
+            tab-size: 2;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background-color: var(--secondary-color);
+            border-top: 1px solid #ddd;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .btn-run {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-run:hover {
+            background-color: var(--button-hover);
+        }
+        
+        .btn-clear {
+            background-color: #e9ecef;
+            color: #495057;
+        }
+        
+        .btn-clear:hover {
+            background-color: #dee2e6;
+        }
+        
+        .output-container {
+            margin-top: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .output-header {
+            padding: 12px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 500;
+        }
+        
+        .output-content {
+            height: 300px;
+            background-color: white;
+            padding: 20px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-top: none;
+        }
+        
+        .error-container {
+            margin-top: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+        
+        .error-header {
+            padding: 12px 20px;
+            background-color: #dc3545;
+            color: white;
+            font-weight: 500;
+        }
+        
+        .error-content {
+            height: 150px;
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            border: 1px solid #f5c6cb;
+            border-top: none;
+        }
+        
+        @media (max-width: 768px) {
+            .editor-container,
+            .output-container,
+            .error-container {
+                border-radius: 0;
+            }
+            .container {
+                padding: 10px 0;
+            }
+            .tab {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+        }
+        /* Animation for tab switching */
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        .tab-content.active {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Modern Code Editor</h1>
+            <p>Edit your HTML, CSS, and JavaScript code</p>
+        </header>
+
+        <div class="editor-container">
+            <div class="tabs">
+                <div class="tab active" data-tab="html">HTML</div>
+                <div class="tab" data-tab="css">CSS</div>
+                <div class="tab" data-tab="js">JavaScript</div>
+            </div>
+
+            <div class="tab-content active" id="html-editor">
+                <div class="editor-wrapper">
+                    <div class="line-numbers" id="html-line-numbers">1</div>
+                    <textarea class="editor" id="html-code" spellcheck="false"></textarea>
+                </div>
+            </div>
+
+            <div class="tab-content" id="css-editor">
+                <div class="editor-wrapper">
+                    <div class="line-numbers" id="css-line-numbers">1</div>
+                    <textarea class="editor" id="css-code" spellcheck="false"></textarea>
+                </div>
+            </div>
+
+            <div class="tab-content" id="js-editor">
+                <div class="editor-wrapper">
+                    <div class="line-numbers" id="js-line-numbers">1</div>
+                    <div style="position:absolute;top:10px;right:10px;z-index:2;display:flex;gap:6px;">
+                        <button type="button" class="btn btn-clear" id="js-undo-btn" title="Undo" style="padding:2px 8px;font-size:13px;">⟲</button>
+                        <button type="button" class="btn btn-clear" id="js-redo-btn" title="Redo" style="padding:2px 8px;font-size:13px;">⟳</button>
+                    </div>
+                </div>
+                <textarea class="editor" id="js-code" spellcheck="false"></textarea>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-run" id="run-btn">Run Code</button>
+            <button class="btn btn-clear" id="clear-btn">Clear Current Tab</button>
+        </div>
+    </div>
+
+    <div class="output-container">
+        <div class="output-header">Output</div>
+        <div class="output-content" id="output"></div>
+    </div>
+
+    <div class="error-container" id="error-container">
+        <div class="error-header">Errors & Console</div>
+        <div class="error-content" id="error-content"></div>
+    </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add "Clear Output" button below the Output tab
+            const outputContainer = document.querySelector('.output-container');
+            const clearOutputBtn2 = document.createElement('button');
+            clearOutputBtn2.className = 'btn btn-clear';
+            clearOutputBtn2.id = 'clear-output-btn-below';
+            clearOutputBtn2.style.margin = '10px 0 0 20px';
+            clearOutputBtn2.textContent = 'Clear Output';
+            outputContainer.insertBefore(clearOutputBtn2, outputContainer.children[2]);
+
+            clearOutputBtn2.addEventListener('click', function() {
+                document.getElementById('output').innerHTML = '<div style="font-weight:bold;font-size:1.2em;text-align:center;margin-top:120px;letter-spacing:2px;">YOUR OUTPUT</div>';
+                document.getElementById('error-content').innerHTML = '';
+                document.getElementById('error-container').style.display = 'none';
+            });
+            // Add "Clear Output" button next to "Clear Current Tab"
+            const controls = document.querySelector('.controls');
+            const clearOutputBtn = document.createElement('button');
+            clearOutputBtn.className = 'btn btn-clear';
+            clearOutputBtn.id = 'clear-output-btn';
+            clearOutputBtn.textContent = 'Clear Output';
+            controls.appendChild(clearOutputBtn);
+
+            // Clear Output button functionality
+            clearOutputBtn.addEventListener('click', function() {
+                document.getElementById('output').innerHTML = '<div style="font-weight:bold;font-size:1.2em;text-align:center;margin-top:120px;letter-spacing:2px;">YOUR OUTPUT</div>';
+                document.getElementById('error-content').innerHTML = '';
+                document.getElementById('error-container').style.display = 'none';
+            });
+
+            // Show "YOUR OUTPUT" text when output is empty
+            document.getElementById('output').innerHTML = '<div style="font-weight:bold;font-size:1.2em;text-align:center;margin-top:120px;letter-spacing:2px;">YOUR OUTPUT</div>';
+            // Initialize editors with example code
+            const htmlEditor = document.getElementById('html-code');
+            const cssEditor = document.getElementById('css-code');
+            const jsEditor = document.getElementById('js-code');
+
+            htmlEditor.value = `<!DOCTYPE html>
+<html>
+<head>
+    <title>My Page</title>
+</head>
+<body>
+    <h1>Welcome to My Page</h1>
+    <div class="container">
+        <p>This is a sample HTML template.</p>
+        <button id="demo-btn">Click Me</button>
+    </div>
+</body>
+</html>`;
+
+            cssEditor.value = `body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 20px;
+    background-color: #f5f5f5;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+h1 {
+    color: #4a6fa5;
+}
+
+#demo-btn {
+    background-color: #4a6fa5;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#demo-btn:hover {
+    background-color: #3a5a8f;
+}`;
+
+            jsEditor.value = `document.getElementById('demo-btn').addEventListener('click', function() {
+    alert('Button clicked!');
+    console.log('Button was clicked at ' + new Date().toLocaleTimeString());
+});`;
+
+            // Update line numbers for all editors
+            updateLineNumbers('html');
+            updateLineNumbers('css');
+            updateLineNumbers('js');
+
+            // Tab switching functionality
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs and content
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+                    // Add active class to clicked tab and corresponding content
+                    this.classList.add('active');
+                    const tabId = this.getAttribute('data-tab') + '-editor';
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+
+            // Run button functionality
+            document.getElementById('run-btn').addEventListener('click', function() {
+                runCode();
+            });
+
+            // Clear button functionality
+            document.getElementById('clear-btn').addEventListener('click', function() {
+                const activeTab = document.querySelector('.tab.active').getAttribute('data-tab');
+                if (activeTab === 'html') {
+                    htmlEditor.value = '';
+                    updateLineNumbers('html');
+                } else if (activeTab === 'css') {
+                    cssEditor.value = '';
+                    updateLineNumbers('css');
+                } else if (activeTab === 'js') {
+                    jsEditor.value = '';
+                    updateLineNumbers('js');
+                }
+            });
+
+            // Auto-update line numbers on input
+            htmlEditor.addEventListener('input', function() {
+                updateLineNumbers('html');
+                autoCloseTags(htmlEditor);
+            });
+
+            cssEditor.addEventListener('input', function() {
+                updateLineNumbers('css');
+            });
+
+            jsEditor.addEventListener('input', function() {
+                updateLineNumbers('js');
+            });
+
+            // Synchronize line numbers scroll with editor scroll
+            htmlEditor.addEventListener('scroll', function() {
+                document.getElementById('html-line-numbers').scrollTop = htmlEditor.scrollTop;
+            });
+            cssEditor.addEventListener('scroll', function() {
+                document.getElementById('css-line-numbers').scrollTop = cssEditor.scrollTop;
+            });
+            jsEditor.addEventListener('scroll', function() {
+                document.getElementById('js-line-numbers').scrollTop = jsEditor.scrollTop;
+            });
+
+            // Auto-indent and auto-close brackets
+            htmlEditor.addEventListener('keydown', function(e) {
+                handleIndentation(e, htmlEditor);
+                autoCloseBrackets(e, htmlEditor);
+            });
+
+            function updateLineNumbers(editorType) {
+                const editor = document.getElementById(editorType + '-code');
+                const lineNumbers = document.getElementById(editorType + '-line-numbers');
+                const lines = editor.value.split('\n');
+
+                let lineNumbersText = '';
+                for (let i = 1; i <= lines.length; i++) {
+                    lineNumbersText += i + '\n';
+                }
+
+                // Use <pre> for correct formatting
+                lineNumbers.innerHTML = '<pre style="margin:0;line-height:1.5;">' + lineNumbersText + '</pre>';
+            }
+
+            // Function to run the code
+            function runCode() {
+                const html = htmlEditor.value;
+                const css = cssEditor.value;
+                const js = jsEditor.value;
+                const output = document.getElementById('output');
+                const errorContent = document.getElementById('error-content');
+                const errorContainer = document.getElementById('error-container');
+
+                // Clear previous output and errors
+                output.innerHTML = '';
+                errorContent.innerHTML = '';
+                errorContainer.style.display = 'none';
+
+                // Create iframe for output
+                const iframe = document.createElement('iframe');
+                iframe.style.width = '100%';
+                iframe.style.height = '100%';
+                iframe.style.border = 'none';
+                output.appendChild(iframe);
+
+                // Get iframe document
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+
+                try {
+                    // Write HTML, CSS, and JS to iframe
+                    iframeDoc.open();
+                    iframeDoc.write(`
+                                            <!DOCTYPE html>
+                                            <html>
+                                            <head>
+                                                <style>${css}</style>
+                                            </head>
+                                            <body>
+                                                ${html}
+                                                <script>
+                                                    // Override console.log to capture output
+                                                    const originalConsoleLog = console.log;
+                                                    console.log = function() {
+                                                        originalConsoleLog.apply(console, arguments);
+                                                        const args = Array.from(arguments).map(arg => 
+                                                            typeof arg === 'object' ? JSON.stringify(arg) : arg
+                                                        ).join(' ');
+                                                        
+                                                        parent.document.getElementById('error-content').innerHTML += 
+                                                            '> ' + args + '\\n';
+                                                        parent.document.getElementById('error-container').style.display = 'block';
+                                                    };
+                                                    
+                                                    // Error handling
+                                                    window.onerror = function(message, source, lineno, colno, error) {
+                                                        parent.document.getElementById('error-content').innerHTML += 
+                                                            'Error: ' + message + ' (line ' + lineno + ')\\n';
+                                                        parent.document.getElementById('error-container').style.display = 'block';
+                                                        return true;
+                                                    };
+                                                <\/script>
+                                                <script>
+                                                    ${js}
+                                                <\/script>
+                                            </body>
+                                            </html>
+                                        `);
+                    iframeDoc.close();
+                } catch (e) {
+                    errorContent.innerHTML = 'Error: ' + e.message;
+                    errorContainer.style.display = 'block';
+                }
+            }
+
+            // Function to handle auto-indentation
+            function handleIndentation(e, editor) {
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    const start = editor.selectionStart;
+                    const end = editor.selectionEnd;
+
+                    // Get current value and insert tab
+                    const value = editor.value;
+                    editor.value = value.substring(0, start) + '  ' + value.substring(end);
+
+                    // Move cursor position
+                    editor.selectionStart = editor.selectionEnd = start + 2;
+                } else if (e.key === 'Enter') {
+                    // Auto-indent on new line
+                    const start = editor.selectionStart;
+                    const value = editor.value;
+                    const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+                    const currentLine = value.substring(lineStart, start);
+                    const indent = currentLine.match(/^\s*/)[0];
+
+                    if (indent.length > 0) {
+                        e.preventDefault();
+                        const newValue = value.substring(0, start) + '\n' + indent + value.substring(start);
+                        editor.value = newValue;
+                        editor.selectionStart = editor.selectionEnd = start + 1 + indent.length;
+                    }
+                }
+            }
+
+            // Function to auto-close brackets and quotes
+            function autoCloseBrackets(e, editor) {
+                const openingChars = {
+                    '(': ')',
+                    '[': ']',
+                    '{': '}',
+                    "'": "'",
+                    '"': '"',
+                    '`': '`'
+                };
+
+                if (openingChars[e.key]) {
+                    e.preventDefault();
+                    const start = editor.selectionStart;
+                    const end = editor.selectionEnd;
+                    const value = editor.value;
+
+                    editor.value = value.substring(0, start) + e.key + openingChars[e.key] + value.substring(end);
+                    editor.selectionStart = editor.selectionEnd = start + 1;
+                }
+            }
+
+            // Function to auto-close HTML tags
+            function autoCloseTags(editor) {
+                const value = editor.value;
+                const cursorPos = editor.selectionStart;
+
+                // Check if the last typed character is '>'
+                if (value[cursorPos - 1] === '>') {
+                    // Find the tag name
+                    let tagStart = cursorPos - 2;
+                    while (tagStart >= 0 && value[tagStart] !== '<') {
+                        tagStart--;
+                    }
+
+                    if (tagStart >= 0) {
+                        const tagName = value.substring(tagStart + 1, cursorPos - 1).trim();
+
+                        // Check if it's a closing tag
+                        if (!tagName.startsWith('/') && !value.substring(tagStart, cursorPos).endsWith('/>')) {
+                            // Check if it's a self-closing tag
+                            const selfClosingTags = ['img', 'br', 'hr', 'input', 'meta', 'link'];
+                            if (!selfClosingTags.includes(tagName.toLowerCase())) {
+                                // Insert closing tag
+                                setTimeout(() => {
+                                    const before = editor.value.substring(0, cursorPos);
+                                    const after = editor.value.substring(cursorPos);
+                                    editor.value = before + '</' + tagName + '>' + after;
+                                    editor.selectionStart = editor.selectionEnd = cursorPos;
+                                }, 10);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Initial code run
+            runCode();
+        });
+    </script>
+</body>
+
+</html>
